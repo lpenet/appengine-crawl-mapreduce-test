@@ -17,19 +17,47 @@
     <h:body>
         <h:form>
             <p:panelGrid columns="1">
-                <h:outputLabel for="seed" value="Seed :"/>
-                <p:inputText id="seed" value="#{crawlingBean.seed}"></p:inputText>
-                <p:commandButton action="#{crawlingBean.start()}" value="Démarrer" disabled="#{crawlingBean.threadRunning}" update="@this"/>
-                <h:outputText value="URLs visitées : #{fn:length(crawlingBean.visitedURLS)}"/>
-                <p:dataTable value="#{crawlingBean.visitedURLS}" var="url" filteredValue="#{crawlingBean.filteredVisitedURLS}" rowKey="#{url}}">
-                    <f:facet name="header">
-                        <p:commandButton action="#{crawlingBean.refresh()}" value="Rafraîchir" update="@all"/>
-                    </f:facet>
-                    <f:facet name="footer">
-                        <p:commandButton action="#{crawlingBean.refresh()}" value="Rafraîchir" update="@all"/>
-                    </f:facet>
-                    <p:column headerText="URL" sortBy="#{url}" filterBy="#{url}" filterMatchMode="contains">
-                        <h:outputText value="#{url}"/>
+                
+                <p:panelGrid columns="3">
+                    <h:outputLabel for="seed" value="Seed :"/>
+                    <p:inputText id="seed" value="#{crawlingBean.seed}"></p:inputText>
+                    <p:commandButton action="#{crawlingBean.start()}" value="Démarrer"
+                                     disabled="#{crawlingBean.threadRunning}"
+                                     process="seed @this"
+                                     update="@form"/>
+                </p:panelGrid>
+                <p:dataTable value="#{runsBean.runs}" var="run" filteredValue="#{runsBean.filteredRuns}" rowKey="#{run.id}}">
+                    <p:column headerText="Identifier" filterBy="#{run.id}" filterMatchMode="contains" sortBy="#{run.id}">
+                        <h:outputText value="#{run.id}"/>
+                    </p:column>
+                    <p:column headerText="Seed" filterBy="#{run.seed}" filterMatchMode="contains" sortBy="#{run.seed}">
+                        <h:outputText value="#{run.seed}"/>
+                    </p:column>
+                    <p:column headerText="Page count">
+                        <h:link outcome="#{runsBean.goRunPages()}" value="#{runsBean.getPageCount(run)}">
+                            <f:param name="runid" value="#{run.id}"/>
+                        </h:link>
+                    </p:column>
+                    <p:column headerText="Pages to process">
+                        <h:link outcome="#{runsBean.goRunPages()}" value="#{runsBean.getPagesToProcess(run)}">
+                            <f:param name="runid" value="#{run.id}"/>
+                        </h:link>
+                    </p:column>
+                    <p:column headerText="Pages processed">
+                        <h:link outcome="#{runsBean.goRunPages()}" value="#{runsBean.getPagesProcessed(run)}">
+                            <f:param name="runid" value="#{run.id}"/>
+                        </h:link>
+                    </p:column>
+                    <p:column headerText="Pages in process">
+                        <h:link outcome="#{runsBean.goRunPages()}" value="#{runsBean.getPagesInProcess(run)}">
+                            <f:param name="runid" value="#{run.id}"/>
+                        </h:link>
+                    </p:column>
+                    <p:column headerText="Start" sortBy="#{run.start}">
+                        <h:outputText value="#{run.start}"/>
+                    </p:column>
+                    <p:column headerText="End" sortBy="#{run.end}">
+                        <h:outputText value="#{run.end}"/>
                     </p:column>
                 </p:dataTable>
             </p:panelGrid>

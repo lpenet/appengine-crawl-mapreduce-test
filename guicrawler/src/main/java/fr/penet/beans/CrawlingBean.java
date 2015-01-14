@@ -8,12 +8,18 @@ package fr.penet.beans;
 import com.google.appengine.api.ThreadManager;
 import fr.penet.crawler.CrawlerThread;
 import fr.penet.crawler.CustomCrawler;
+import fr.penet.viewconfig.Pages;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import javax.enterprise.context.SessionScoped;
+import javax.inject.Inject;
 import javax.inject.Named;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.deltaspike.core.api.config.view.ViewConfig;
+import org.apache.deltaspike.core.api.config.view.navigation.NavigationParameter;
+import org.apache.deltaspike.core.api.config.view.navigation.NavigationParameterContext;
 import org.apache.deltaspike.core.api.scope.ViewAccessScoped;
 import org.primefaces.context.RequestContext;
 
@@ -22,16 +28,10 @@ import org.primefaces.context.RequestContext;
  * @author lpenet
  */
 @Named
-@ViewAccessScoped
+@SessionScoped
 public class CrawlingBean implements Serializable {
-    CustomCrawler crawler = null;
-    
-    @Getter
-    List<String> visitedURLS;
-    
-    @Getter
-    @Setter
-    List<String> filteredVisitedURLS;
+    @Inject
+    CustomCrawler crawler;
     
     @Getter
     @Setter
@@ -43,23 +43,17 @@ public class CrawlingBean implements Serializable {
         return (backgroundThread != null) && backgroundThread.isAlive();
     }
     
-    public void refresh() {
-        if(crawler == null) {
-            visitedURLS = null;
-        }
-        visitedURLS = new ArrayList<String>(crawler.getVisitedUrls());
-    }
-    
-    public void start() {
+    public Class<? extends ViewConfig>  start() {
         if( isThreadRunning() ) {
             RequestContext.getCurrentInstance().execute("alert('Un crawl est déjà en cours!');");
-            return;
+            return null;
         }
-        List<String> seeds = new ArrayList<>();
-        seeds.add(seed);
-        crawler = new CustomCrawler(false);
-        backgroundThread = ThreadManager.createBackgroundThread(new CrawlerThread(crawler, seeds));
+        backgroundThread = ThreadManager.createBackgroundThread(new CrawlerThread(crawler, seed));
         backgroundThread.start();
-        refresh();
+        return Pages.Accueil.class;
     }
+
+
 }
+
+

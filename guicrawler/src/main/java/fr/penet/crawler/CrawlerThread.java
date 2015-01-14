@@ -15,10 +15,10 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class CrawlerThread implements Runnable {
     CustomCrawler crawler;
-    List<String> seeds;
+    String seed;
     @Override
     public void run() {
-        crawler.collectUrls(seeds);
+        crawler.collectUrls(seed,5);
     }
     
 }
