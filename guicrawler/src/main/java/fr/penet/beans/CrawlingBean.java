@@ -10,17 +10,12 @@ import fr.penet.crawler.CrawlerThread;
 import fr.penet.crawler.CustomCrawler;
 import fr.penet.viewconfig.Pages;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.deltaspike.core.api.config.view.ViewConfig;
-import org.apache.deltaspike.core.api.config.view.navigation.NavigationParameter;
-import org.apache.deltaspike.core.api.config.view.navigation.NavigationParameterContext;
-import org.apache.deltaspike.core.api.scope.ViewAccessScoped;
 import org.primefaces.context.RequestContext;
 
 /**

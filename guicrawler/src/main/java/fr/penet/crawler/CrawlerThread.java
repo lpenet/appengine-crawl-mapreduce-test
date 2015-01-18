@@ -5,7 +5,6 @@
  */
 package fr.penet.crawler;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 
 /**
