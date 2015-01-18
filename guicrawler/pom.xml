@@ -310,4 +310,16 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+      <profile>
+	<id>mysqldriver</id>
+	  <dependencies>
+	    <dependency>
+	      <groupId>mysql</groupId>
+	      <artifactId>mysql-connector-java</artifactId>
+	      <version>5.1.34</version>
+	    </dependency>
+	  </dependencies>
+      </profile>
+    </profiles>
 </project>
