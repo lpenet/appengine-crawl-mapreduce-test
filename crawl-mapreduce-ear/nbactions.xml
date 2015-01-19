@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+        <action>
+            <actionName>CUSTOM-appengine:devserver</actionName>
+            <displayName>appengine:devserver</displayName>
+            <goals>
+                <goal>appengine:devserver</goal>
+            </goals>
+        </action>
+        <action>
+            <actionName>CUSTOM-appengine:devserver mysqldriver</actionName>
+            <displayName>appengine:devserver mysqldriver</displayName>
+            <goals>
+                <goal>appengine:devserver</goal>
+            </goals>
+            <activatedProfiles>
+                <activatedProfile>mysqldriver</activatedProfile>
+            </activatedProfiles>
+        </action>
+    </actions>

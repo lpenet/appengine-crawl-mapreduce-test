@@ -15,7 +15,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import lombok.Cleanup;
 import lombok.Data;
 import lombok.extern.java.Log;
@@ -101,6 +100,32 @@ public class CrawlRun implements Serializable {
                 listRuns.add(run);
             }
             return listRuns;
+        } catch (SQLException ex) {
+            log.log(Level.SEVERE,ex.getLocalizedMessage(),ex);
+            return null;
+        }
+    }
+    
+    public static CrawlRun getRunById(Connection conn, int id) {
+        try {
+            @Cleanup
+            PreparedStatement prepareStatement = conn.prepareStatement("select r.seed, r.start, r.end from crawl.runs r where r.id = ?;");
+            prepareStatement.setInt(1, id);
+            prepareStatement.execute();
+            @Cleanup
+            ResultSet resultSet = prepareStatement.getResultSet();
+            if(!resultSet.next()) {
+                return null;
+            }
+            CrawlRun run = new CrawlRun();
+            run.setId(id);
+            run.setSeed(resultSet.getString(1));
+            run.setStart(resultSet.getTimestamp(2));
+            run.setEnd(resultSet.getTimestamp(3));
+            if(resultSet.next()) {
+                log.log(Level.WARNING, "Non unique run with id " + id);
+            }
+            return run;
         } catch (SQLException ex) {
             log.log(Level.SEVERE,ex.getLocalizedMessage(),ex);
             return null;

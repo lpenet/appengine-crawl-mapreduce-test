@@ -17,12 +17,14 @@
     <h:body>
         <h:form>
             <p:panelGrid columns="1">
+                <pre>
+                    <h:outputText value="#{runsBean.message}" />
+                </pre>
                 
                 <p:panelGrid columns="3">
                     <h:outputLabel for="seed" value="Seed :"/>
-                    <p:inputText id="seed" value="#{crawlingBean.seed}"></p:inputText>
-                    <p:commandButton action="#{crawlingBean.start()}" value="Démarrer"
-                                     disabled="#{crawlingBean.threadRunning}"
+                    <p:inputText id="seed" value="#{runsBean.seed}"></p:inputText>
+                    <p:commandButton action="#{runsBean.startCrawl()}" value="Démarrer"
                                      process="seed @this"
                                      update="@form"/>
                 </p:panelGrid>
@@ -53,11 +55,17 @@
                             <f:param name="runid" value="#{run.id}"/>
                         </h:link>
                     </p:column>
-                    <p:column headerText="Start" sortBy="#{run.start}">
+                    <p:column headerText="Start date" sortBy="#{run.start}">
                         <h:outputText value="#{run.start}"/>
                     </p:column>
-                    <p:column headerText="End" sortBy="#{run.end}">
+                    <p:column headerText="End date" sortBy="#{run.end}">
                         <h:outputText value="#{run.end}"/>
+                    </p:column>
+                    <p:column>
+                        <p:commandLink action="#{runsBean.stopCrawl(run)}" value="Stop"/>
+                    </p:column>
+                    <p:column>
+                        <p:commandLink action="#{runsBean.resumeCrawl(run)}" value="Resume"/>
                     </p:column>
                 </p:dataTable>
             </p:panelGrid>

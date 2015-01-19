@@ -3,28 +3,18 @@ package fr.penet.crawler;
 import com.google.appengine.api.ThreadManager;
 import fr.penet.dao.CrawlPage;
 import fr.penet.dao.CrawlRun;
-import fr.penet.db.DbSessionProducer;
+import fr.penet.db.DbUtils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.inject.Inject;
-import javax.inject.Named;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.extern.java.Log;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.jsoup.Jsoup;
@@ -32,11 +22,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-@Named
 @Log
 public class CustomCrawler implements Serializable {
 
-    @Inject DbSessionProducer dbSessionProducer;
+    DbUtils dbUtils = new DbUtils();
     
     private final boolean followExternalLinks;
 
@@ -55,11 +44,11 @@ public class CustomCrawler implements Serializable {
         followExternalLinks = followExternalLinksParam;
     }
     
-    public void collectUrls(String seedURL, int threads) {
+    public int startCollectUrls(String seedURL, int threads) {
         Connection conn = null;
         int runId = -1;
         try {
-            conn = dbSessionProducer.createConnection();
+            conn = dbUtils.createConnection();
     
             CrawlRun run = new CrawlRun();
             run.setSeed(seedURL);
@@ -69,32 +58,89 @@ public class CustomCrawler implements Serializable {
             
             CrawlPage.checkAndInsertURL(runId, conn, seedURL);
             for(int i = 0 ; i < threads ; i++) {
-                ThreadManager.createBackgroundThread(new CrawlRunner(run)).start();
+                ThreadManager.createBackgroundThread(new CrawlRunner(this, run)).start();
             }
         } catch (Exception ex) {
             log.log(Level.SEVERE, userAgent, ex);
         } finally {
-            dbSessionProducer.closeConnection(conn);
+            dbUtils.closeConnection(conn);
+        }
+        return runId;
+    }
+    
+    public void resumeCollectUrls(int runId, int threads) {
+        Connection conn = null;
+        try {
+            conn = dbUtils.createConnection();
+    
+            CrawlRun run = CrawlRun.getRunById(conn, runId);
+            if(run == null) {
+                log.log(Level.WARNING, "No run with id " + runId);
+                return;
+            }
+            
+            run.setStart(new Timestamp(new Date().getTime()));
+            run.setEnd(null);
+            run.update(conn);
+            
+            for(int i = 0 ; i < threads ; i++) {
+                ThreadManager.createBackgroundThread(new CrawlRunner(this,run)).start();
+            }
+        } catch (Exception ex) {
+            log.log(Level.SEVERE, userAgent, ex);
+        } finally {
+            dbUtils.closeConnection(conn);
+        }
+    }
+    
+    public void endCollectUrls(int runId) {
+        Connection conn = null;
+        try {
+            conn = dbUtils.createConnection();
+    
+            CrawlRun run = CrawlRun.getRunById(conn, runId);
+            run.setStart(new Timestamp(new Date().getTime()));
+            run.setEnd(new Timestamp(new Date().getTime()));
+            run.update(conn);
+        } catch (Exception ex) {
+            log.log(Level.SEVERE, userAgent, ex);
+        } finally {
+            dbUtils.closeConnection(conn);
         }
     }
     
     @AllArgsConstructor
     public class CrawlRunner implements Runnable {
+        final CustomCrawler parent;
         CrawlRun run;
         @Override
         public void run() {
+            Connection conn = null;
             try {
                 org.jsoup.Connection jsoupConn = null;
                 CrawlPage toVisit;
-                Connection conn = dbSessionProducer.createConnection();
+                conn = dbUtils.createConnection();
                 while ( true ) {
+                    int runId = run.getId();
+                    run = CrawlRun.getRunById(conn, runId);
+                    if(run == null) {
+                        log.log(Level.INFO, "No run with id " + runId + ". Exiting thread.");
+                        return;
+                    }
+                    if(run.getEnd() != null) {
+                        // an end date is recorded. This is a signal for the threads to stop
+                        log.log(Level.INFO, "End date found for run " + runId + ". Exiting thread.");
+                        return;
+                    }
                     toVisit = CrawlPage.getFrontierPageForProcessing(run.getId(), conn);
                     try {
                         if(toVisit == null) {
                             if(run.getPagesInProcess(conn) == 0) {
                                 break;
                             } else {
-                                Thread.sleep(5000);
+                                synchronized(parent) {
+                                    parent.wait();
+                                }
                                 continue;
                             }
                         }
@@ -118,6 +164,9 @@ public class CustomCrawler implements Serializable {
                             }
                             if (shouldVisit(run.getSeed(), absHref)) {
                                 CrawlPage.checkAndInsertURL(run.getId(), conn, absHref);
+                                synchronized(parent) {
+                                    parent.notifyAll();
+                                }
                             }
                         }
                         toVisit.setStatus(200);
@@ -140,6 +189,8 @@ public class CustomCrawler implements Serializable {
                 Logger.getLogger(CustomCrawler.class.getName()).log(Level.SEVERE, null, ex);
             } catch (Exception ex) {
                 log.log(Level.SEVERE, ex.getLocalizedMessage(), ex);
+            } finally {
+                dbUtils.closeConnection(conn);
             }
         }
 

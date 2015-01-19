@@ -5,13 +5,23 @@
  */
 package fr.penet.beans;
 
+import com.google.appengine.api.modules.ModulesService;
+import com.google.appengine.api.modules.ModulesServiceFactory;
 import fr.penet.dao.CrawlRun;
 import fr.penet.viewconfig.Pages;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import javax.enterprise.context.RequestScoped;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.inject.Inject;
 import javax.inject.Named;
 import lombok.Getter;
@@ -27,6 +37,13 @@ import org.apache.deltaspike.core.api.scope.ViewAccessScoped;
 @ViewAccessScoped
 public class RunsBean implements Serializable {
     @Inject Connection conn;
+    
+    @Getter
+    @Setter
+    String seed;
+
+    @Getter
+    String message;
     
     public List<CrawlRun> getRuns() {
         return CrawlRun.getAllRuns(conn);
@@ -58,5 +75,53 @@ public class RunsBean implements Serializable {
 
     public int getPagesProcessed(CrawlRun c) throws SQLException {
         return c.getPagesProcessed(conn);
+    }
+
+
+    private final static String CRAWLER_MODULE = "crawler";
+    
+    private String getCrawlerModuleBaseUrl() {
+        ModulesService modulesApi = ModulesServiceFactory.getModulesService();
+        return "http://" + modulesApi.getVersionHostname(CRAWLER_MODULE,null);
+    }
+    
+    public Class<? extends ViewConfig>  startCrawl() throws IOException {
+        message = "";
+        URL startURL = new URL(getCrawlerModuleBaseUrl() + "/startCrawl?seed=" + URLEncoder.encode(seed, "UTF-8"));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(startURL.openStream()));
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            message += line + "\n";
+        }
+        reader.close();
+        return Pages.Accueil.class;
+    }
+
+
+    public Class<? extends ViewConfig>  stopCrawl(CrawlRun run) throws IOException {
+        message = "";
+        URL startURL = new URL(getCrawlerModuleBaseUrl() + "/stopCrawl?id=" + run.getId());
+        BufferedReader reader = new BufferedReader(new InputStreamReader(startURL.openStream()));
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            message += line + "\n";
+        }
+        reader.close();
+        return Pages.Accueil.class;
+    }
+
+    public Class<? extends ViewConfig>  resumeCrawl(CrawlRun run) throws IOException {
+        message = "";
+        URL startURL = new URL(getCrawlerModuleBaseUrl() + "/resumeCrawl?id=" + run.getId());
+        BufferedReader reader = new BufferedReader(new InputStreamReader(startURL.openStream()));
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            message += line + "\n";
+        }
+        reader.close();
+        return Pages.Accueil.class;
     }
 }
