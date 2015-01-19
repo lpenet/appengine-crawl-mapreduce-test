@@ -1,6 +1,7 @@
 package fr.penet.crawler;
 
 import com.google.appengine.api.ThreadManager;
+import fr.penet.dao.CrawlLink;
 import fr.penet.dao.CrawlPage;
 import fr.penet.dao.CrawlRun;
 import fr.penet.db.DbUtils;
@@ -152,10 +153,11 @@ public class CustomCrawler implements Serializable {
                             jsoupConn.url(urlToCrawl);
                         }
                         doc = jsoupConn.get();
+                        toVisit.setTitle(doc.title());
                         Elements links = doc.select("a[href]");
                         for (Element link : links) {
-
                             String absHref = link.attr("abs:href");
+                            String linkValue = link.text();
                             //poor man anchor removal
                             int sharpIndex = absHref.indexOf("#");
                             if(sharpIndex != -1) {
@@ -163,7 +165,12 @@ public class CustomCrawler implements Serializable {
 
                             }
                             if (shouldVisit(run.getSeed(), absHref)) {
-                                CrawlPage.checkAndInsertURL(run.getId(), conn, absHref);
+                                int to = CrawlPage.checkAndInsertURL(run.getId(), conn, absHref);
+                                CrawlLink linkToInsert = CrawlLink.builder().pageFrom(toVisit.getId())
+                                        .pageTo(to)
+                                        .text(linkValue)
+                                        .build();
+                                linkToInsert.insert(conn);
                                 synchronized(parent) {
                                     parent.notifyAll();
                                 }

@@ -176,6 +176,12 @@ public class CrawlRun implements Serializable {
         conn.setAutoCommit(false);
         try {
             @Cleanup
+            PreparedStatement deleteFromLinks = conn.prepareStatement("delete from crawl.links where page_from in (select id from crawl.pages where runid=?) or page_to in (select id from crawl.pages where runid=?)");
+            deleteFromLinks.setInt(1, id);
+            deleteFromLinks.setInt(2, id);
+            deleteFromLinks.execute();
+
+            @Cleanup
             PreparedStatement deleteFromPages = conn.prepareStatement("delete from crawl.pages where runid=?");
             deleteFromPages.setInt(1, id);
             deleteFromPages.execute();

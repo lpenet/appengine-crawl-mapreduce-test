@@ -29,6 +29,7 @@ public class CrawlPage implements Serializable {
     int runid;
     String url;
     Integer status;
+    String title;
     
     public static final int STATUS_IN_PROCESS = -1;
     
@@ -36,7 +37,7 @@ public class CrawlPage implements Serializable {
         List<CrawlPage> listRet = new ArrayList<>();
         try {
             @Cleanup
-            PreparedStatement stmtRunPages = conn.prepareStatement("select id, runid, url, status from crawl.pages where runid = ?");
+            PreparedStatement stmtRunPages = conn.prepareStatement("select id, runid, url, status, title from crawl.pages where runid = ?");
             stmtRunPages.setInt(1, runid);
             @Cleanup
             ResultSet resultPages = stmtRunPages.executeQuery();
@@ -49,6 +50,7 @@ public class CrawlPage implements Serializable {
                 if(resultPages.wasNull()) {
                     page.setStatus(null);
                 }
+                page.setTitle(resultPages.getString(5));
                 
                 listRet.add(page);
             }
@@ -60,46 +62,53 @@ public class CrawlPage implements Serializable {
     }
     
     public static CrawlPage getFrontierPageForProcessing(int runid, Connection conn) throws SQLException {
-        @Cleanup
-        PreparedStatement stmtFrontierPage = conn.prepareStatement("select id, runid, url, status from crawl.pages where runid= ? and status is null having min(id) for update",
-                ResultSet.CONCUR_UPDATABLE);
-        stmtFrontierPage.setInt(1, runid);
-        @Cleanup
-        ResultSet resultFrontierPage = stmtFrontierPage.executeQuery();
-        if(!resultFrontierPage.next()) {
-            return null;
+        conn.setAutoCommit(false);
+        try {
+            @Cleanup
+            PreparedStatement stmtFrontierPage = conn.prepareStatement("select id, runid, url, status, title from crawl.pages where runid= ? and status is null having min(id) for update",
+                    ResultSet.CONCUR_UPDATABLE);
+            stmtFrontierPage.setInt(1, runid);
+            @Cleanup
+            ResultSet resultFrontierPage = stmtFrontierPage.executeQuery();
+            if(!resultFrontierPage.next()) {
+                return null;
+            }
+            CrawlPage ret = new CrawlPage();
+            ret.setId(resultFrontierPage.getInt(1));
+            ret.setRunid(resultFrontierPage.getInt(2));
+            ret.setUrl(resultFrontierPage.getString(3));
+            ret.setStatus(STATUS_IN_PROCESS);
+            ret.setTitle(resultFrontierPage.getString(5));
+            PreparedStatement stmtUpdateFrontierPage = conn.prepareStatement("update crawl.pages set status = " + STATUS_IN_PROCESS + " where id = " + ret.getId());
+            stmtUpdateFrontierPage.execute();
+            return ret;
+        } finally {
+            conn.setAutoCommit(true);
         }
-        CrawlPage ret = new CrawlPage();
-        ret.setId(resultFrontierPage.getInt(1));
-        ret.setRunid(resultFrontierPage.getInt(2));
-        ret.setUrl(resultFrontierPage.getString(3));
-        ret.setStatus(STATUS_IN_PROCESS);
-        PreparedStatement stmtUpdateFrontierPage = conn.prepareStatement("update crawl.pages set status = " + STATUS_IN_PROCESS + " where id = " + ret.getId());
-        stmtUpdateFrontierPage.execute();
-        return ret;
     }
     
-    public static boolean checkAndInsertURL(int runid, Connection conn, String url) throws SQLException, Exception {
+    public static int checkAndInsertURL(int runid, Connection conn, String url) throws SQLException, Exception {
         conn.setAutoCommit(false);
-        boolean ret = false;
+        int ret = -1;
         try {
             @Cleanup
             PreparedStatement lockingStatement = conn.prepareStatement("select p.id from crawl.pages p, crawl.runs r where r.id = ? and p.runid = r.id and p.url = r.seed for update");
             lockingStatement.setInt(1, runid);
             lockingStatement.execute();
             @Cleanup
-            PreparedStatement stmtFrontierPage = conn.prepareStatement("select id, runid, url, status from crawl.pages where runid= ? and url = ?");
+            PreparedStatement stmtFrontierPage = conn.prepareStatement("select id from crawl.pages p where runid= ? and url = ?");
             stmtFrontierPage.setInt(1, runid);
             stmtFrontierPage.setString(2, url);
             @Cleanup
             ResultSet resultFrontierPage = stmtFrontierPage.executeQuery();
-            ret = !resultFrontierPage.next();
-            if(ret) {
+            if(!resultFrontierPage.next()) {
                 CrawlPage toInsert = new CrawlPage();
                 toInsert.setRunid(runid);
                 toInsert.setStatus(null);
                 toInsert.setUrl(url);
-                toInsert.insert(conn);
+                ret = toInsert.insert(conn);
+            } else {
+                ret = resultFrontierPage.getInt(1);
             }
             conn.commit();
         } finally {
@@ -107,11 +116,12 @@ public class CrawlPage implements Serializable {
         }
         return ret;
     }
-    public void insert(Connection conn) throws SQLException, Exception {
+    public int insert(Connection conn) throws SQLException, Exception {
         @Cleanup
         PreparedStatement prepareInsertURL = prepareInsertURL(conn);
         prepareInsertURL.setInt(1, runid);
         prepareInsertURL.setString(2, url);
+        prepareInsertURL.setString(3, title);
         int ret = prepareInsertURL.executeUpdate();
         if(ret != 1) {
                 throw new Exception("Could not insert run in db");
@@ -120,6 +130,7 @@ public class CrawlPage implements Serializable {
         ResultSet generatedKeys = prepareInsertURL.getGeneratedKeys();
         generatedKeys.next();
         id = generatedKeys.getInt(1);
+        return id;
     }
     
     public void update(Connection conn) throws SQLException, Exception {
@@ -128,7 +139,8 @@ public class CrawlPage implements Serializable {
         prepareUpdateURL.setInt(1, runid);
         prepareUpdateURL.setString(2, url);
         prepareUpdateURL.setInt(3, status);
-        prepareUpdateURL.setInt(4, id);
+        prepareUpdateURL.setString(4, title);
+        prepareUpdateURL.setInt(5, id);
         int ret = prepareUpdateURL.executeUpdate();
         if(ret != 1) {
                 throw new Exception("Could not update run in db");
@@ -136,13 +148,13 @@ public class CrawlPage implements Serializable {
     }
     
     private PreparedStatement prepareInsertURL(Connection conn) throws SQLException {
-        String statement = "INSERT INTO crawl.pages (runid, url) VALUES( ? , ? )";
+        String statement = "INSERT INTO crawl.pages (runid, url,title) VALUES( ?, ?, ? )";
         PreparedStatement stmt = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
         return stmt;
     }
 
     private PreparedStatement prepareUpdateURL(Connection conn) throws SQLException {
-        String statement = "update crawl.pages set runid = ?, url = ?, status = ? where id = ?";
+        String statement = "update crawl.pages set runid = ?, url = ?, status = ?, title = ? where id = ?";
         PreparedStatement stmt = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
         return stmt;
     }
