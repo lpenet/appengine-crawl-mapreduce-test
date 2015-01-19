@@ -16,5 +16,6 @@
     <module>crawler</module>
     <module>crawldb</module>
     <module>crawl-mapreduce-ear</module>
+    <module>title_stats</module>
   </modules>
 </project>

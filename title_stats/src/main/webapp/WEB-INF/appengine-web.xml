@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
+    <application>lpcrawlermapreduce</application>
+    <module>title_stats</module>
+    <version>${appengine.app.version}</version>
+    <instance-class>F1</instance-class>
+    <threadsafe>true</threadsafe>
+    
+    <system-properties>
+        <property name="java.util.logging.config.file" value="WEB-INF/logging.properties"/>
+    </system-properties>
+    
+    <use-google-connector-j>true</use-google-connector-j>
+    
+    <sessions-enabled>true</sessions-enabled> 
+</appengine-web-app>
