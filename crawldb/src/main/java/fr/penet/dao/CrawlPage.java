@@ -158,6 +158,4 @@ public class CrawlPage implements Serializable {
         PreparedStatement stmt = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
         return stmt;
     }
-
-
 }
