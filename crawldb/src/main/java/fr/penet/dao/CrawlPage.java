@@ -80,13 +80,13 @@ public class CrawlPage implements Serializable {
     }
     
     public static boolean checkAndInsertURL(int runid, Connection conn, String url) throws SQLException, Exception {
-        @Cleanup
-        PreparedStatement stmtLockPages = conn.prepareStatement("LOCK TABLE crawl.pages WRITE");
-        @Cleanup
-        PreparedStatement stmtUnlockTables = conn.prepareStatement("UNLOCK TABLES");
-        stmtLockPages.execute();
+        conn.setAutoCommit(false);
         boolean ret = false;
         try {
+            @Cleanup
+            PreparedStatement lockingStatement = conn.prepareStatement("select p.id from crawl.pages p, crawl.runs r where r.id = ? and p.runid = r.id and p.url = r.seed for update");
+            lockingStatement.setInt(1, runid);
+            lockingStatement.execute();
             @Cleanup
             PreparedStatement stmtFrontierPage = conn.prepareStatement("select id, runid, url, status from crawl.pages where runid= ? and url = ?");
             stmtFrontierPage.setInt(1, runid);
@@ -101,8 +101,9 @@ public class CrawlPage implements Serializable {
                 toInsert.setUrl(url);
                 toInsert.insert(conn);
             }
+            conn.commit();
         } finally {
-            stmtUnlockTables.execute();
+            conn.setAutoCommit(true);
         }
         return ret;
     }
