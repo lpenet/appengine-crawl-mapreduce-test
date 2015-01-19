@@ -171,4 +171,22 @@ public class CrawlRun implements Serializable {
             throw new Exception("Could not update run in db");
         }
     }
+    
+    public void delete(Connection conn) throws SQLException {
+        conn.setAutoCommit(false);
+        try {
+            @Cleanup
+            PreparedStatement deleteFromPages = conn.prepareStatement("delete from crawl.pages where runid=?");
+            deleteFromPages.setInt(1, id);
+            deleteFromPages.execute();
+            
+            @Cleanup
+            PreparedStatement deleteFromRuns = conn.prepareStatement("delete from crawl.runs where id=?");
+            deleteFromRuns.setInt(1, id);
+            deleteFromRuns.execute();
+            conn.commit();
+        } finally {
+            conn.setAutoCommit(true);
+        }
+    }
 }

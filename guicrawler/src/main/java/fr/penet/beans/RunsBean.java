@@ -124,4 +124,9 @@ public class RunsBean implements Serializable {
         reader.close();
         return Pages.Accueil.class;
     }
+
+    public Class<? extends ViewConfig>  deleteCrawl(CrawlRun run) throws IOException, SQLException {
+        run.delete(conn);
+        return Pages.Accueil.class;
+    }
 }
