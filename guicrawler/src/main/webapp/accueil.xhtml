@@ -17,9 +17,7 @@
     <h:body>
         <h:form>
             <p:panelGrid columns="1">
-                <pre>
-                    <h:outputText value="#{runsBean.message}" />
-                </pre>
+                <h:outputText value="#{runsBean.message}" />
                 
                 <p:panelGrid columns="3">
                     <h:outputLabel for="seed" value="Seed :"/>
@@ -62,10 +60,13 @@
                         <h:outputText value="#{run.end}"/>
                     </p:column>
                     <p:column>
-                        <p:commandLink action="#{runsBean.stopCrawl(run)}" value="Stop"/>
+                        <p:commandLink action="#{runsBean.stopCrawl(run)}" value="Stop" update="@form"/>
                     </p:column>
                     <p:column>
-                        <p:commandLink action="#{runsBean.resumeCrawl(run)}" value="Resume"/>
+                        <p:commandLink action="#{runsBean.resumeCrawl(run)}" value="Resume" update="@form"/>
+                    </p:column>
+                    <p:column>
+                        <p:commandLink action="#{runsBean.deleteCrawl(run)}" value="Delete" disabled="#{empty run.end}"  update="@form"/>
                     </p:column>
                 </p:dataTable>
             </p:panelGrid>
