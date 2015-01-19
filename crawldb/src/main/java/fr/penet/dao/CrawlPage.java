@@ -87,6 +87,7 @@ public class CrawlPage implements Serializable {
         stmtLockPages.execute();
         boolean ret = false;
         try {
+            @Cleanup
             PreparedStatement stmtFrontierPage = conn.prepareStatement("select id, runid, url, status from crawl.pages where runid= ? and url = ?");
             stmtFrontierPage.setInt(1, runid);
             stmtFrontierPage.setString(2, url);
