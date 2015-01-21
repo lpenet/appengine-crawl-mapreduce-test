@@ -60,13 +60,21 @@
                         <h:outputText value="#{run.end}"/>
                     </p:column>
                     <p:column>
-                        <p:commandLink action="#{runsBean.stopCrawl(run)}" value="Stop" update="@form"/>
+                        <p:commandLink action="#{runsBean.stopCrawl(run)}" value="Stop crawl" update="@form"/>
                     </p:column>
                     <p:column>
-                        <p:commandLink action="#{runsBean.resumeCrawl(run)}" value="Resume" update="@form"/>
+                        <p:commandLink action="#{runsBean.resumeCrawl(run)}" value="Resume crawl" update="@form"/>
                     </p:column>
                     <p:column>
-                        <p:commandLink action="#{runsBean.deleteCrawl(run)}" value="Delete" disabled="#{empty run.end}"  update="@form"/>
+                        <p:commandLink action="#{runsBean.deleteCrawl(run)}" value="Delete crawl" disabled="#{empty run.end}" update="@form"/>
+                    </p:column>
+                    <p:column>
+                        <ui:repeat value="#{runsBean.getRunMRJobs(run)}" var="mrJob" varStatus="jobStatus">
+                            <h:outputLink target="_blank" value="#{runsBean.titleStatsModuleBaseUrl}/_ah/pipeline/status.html?root=#{mrJob.appengineMRId}">#{mrJob.appengineMRId}</h:outputLink><h:outputText value=", " rendered="#{not jobStatus.last}"/>
+                        </ui:repeat>
+                    </p:column>
+                    <p:column>
+                        <p:commandLink action="#{runsBean.startTitleStats(run)}" value="Start a title stats M/R job" update="@form"/>
                     </p:column>
                 </p:dataTable>
             </p:panelGrid>

@@ -7,6 +7,7 @@ package fr.penet.beans;
 
 import com.google.appengine.api.modules.ModulesService;
 import com.google.appengine.api.modules.ModulesServiceFactory;
+import fr.penet.dao.CrawlMapReduceJob;
 import fr.penet.dao.CrawlRun;
 import fr.penet.viewconfig.Pages;
 import java.io.BufferedReader;
@@ -26,6 +27,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.deltaspike.core.api.config.view.ViewConfig;
 import org.apache.deltaspike.core.api.scope.ViewAccessScoped;
 
@@ -79,13 +81,19 @@ public class RunsBean implements Serializable {
 
 
     private final static String CRAWLER_MODULE = "crawler";
+    private final static String TITLE_STATS_MODULE = "title_stats";
     
     private String getCrawlerModuleBaseUrl() {
         ModulesService modulesApi = ModulesServiceFactory.getModulesService();
         return "http://" + modulesApi.getVersionHostname(CRAWLER_MODULE,null);
     }
     
-    public Class<? extends ViewConfig>  startCrawl() throws IOException {
+    public String getTitleStatsModuleBaseUrl() {
+        ModulesService modulesApi = ModulesServiceFactory.getModulesService();
+        return "http://" + modulesApi.getVersionHostname(TITLE_STATS_MODULE,null);
+    }
+    
+    public void startCrawl() throws IOException {
         message = "";
         URL startURL = new URL(getCrawlerModuleBaseUrl() + "/startCrawl?seed=" + URLEncoder.encode(seed, "UTF-8"));
         BufferedReader reader = new BufferedReader(new InputStreamReader(startURL.openStream()));
@@ -95,11 +103,10 @@ public class RunsBean implements Serializable {
             message += line + "\n";
         }
         reader.close();
-        return Pages.Accueil.class;
     }
 
 
-    public Class<? extends ViewConfig>  stopCrawl(CrawlRun run) throws IOException {
+    public void stopCrawl(CrawlRun run) throws IOException {
         message = "";
         URL startURL = new URL(getCrawlerModuleBaseUrl() + "/stopCrawl?id=" + run.getId());
         BufferedReader reader = new BufferedReader(new InputStreamReader(startURL.openStream()));
@@ -109,10 +116,9 @@ public class RunsBean implements Serializable {
             message += line + "\n";
         }
         reader.close();
-        return Pages.Accueil.class;
     }
 
-    public Class<? extends ViewConfig>  resumeCrawl(CrawlRun run) throws IOException {
+    public void resumeCrawl(CrawlRun run) throws IOException {
         message = "";
         URL startURL = new URL(getCrawlerModuleBaseUrl() + "/resumeCrawl?id=" + run.getId());
         BufferedReader reader = new BufferedReader(new InputStreamReader(startURL.openStream()));
@@ -122,11 +128,38 @@ public class RunsBean implements Serializable {
             message += line + "\n";
         }
         reader.close();
-        return Pages.Accueil.class;
     }
 
-    public Class<? extends ViewConfig>  deleteCrawl(CrawlRun run) throws IOException, SQLException {
+    public void deleteCrawl(CrawlRun run) throws IOException, SQLException {
         run.delete(conn);
-        return Pages.Accueil.class;
+    }
+
+    public void startTitleStats(CrawlRun run) throws IOException, SQLException {
+        message = "";
+        URL startMRJob = new URL(getTitleStatsModuleBaseUrl() + "/title_stats?runId="+run.getId()+"&shards=5");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(startMRJob.openStream()));
+        String line;
+        final String PREFIX = "Mapper started. Job id : ";
+        String jobId = null;
+        while ((line = reader.readLine()) != null) {
+            if(StringUtils.startsWith(line, PREFIX)) {
+                jobId = line.substring(PREFIX.length());
+                break;
+            }
+        }
+        reader.close();
+        if(jobId == null) {
+            message = "Error starting job";
+            return;
+        }
+        CrawlMapReduceJob job = CrawlMapReduceJob.builder()
+                .runId(run.getId())
+                .appengineMRId(jobId).build();
+        job.insert(conn);
+        message = "Job " + jobId + " started";
+    }
+
+    public List<CrawlMapReduceJob> getRunMRJobs(CrawlRun run) throws SQLException {
+        return CrawlMapReduceJob.getByRunId(conn, run.getId());
     }
 }
