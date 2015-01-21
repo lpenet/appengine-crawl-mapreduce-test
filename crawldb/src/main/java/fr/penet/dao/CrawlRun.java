@@ -182,9 +182,24 @@ public class CrawlRun implements Serializable {
             deleteFromLinks.execute();
 
             @Cleanup
+            PreparedStatement deleteFromWordPages = conn.prepareStatement("delete from crawl.word_pages where page in (select id from crawl.pages where runid=?)");
+            deleteFromWordPages.setInt(1, id);
+            deleteFromWordPages.execute();
+            
+            @Cleanup
+            PreparedStatement deleteFromWords = conn.prepareStatement("delete from crawl.words where runid=?");
+            deleteFromWords.setInt(1, id);
+            deleteFromWords.execute();
+            
+            @Cleanup
             PreparedStatement deleteFromPages = conn.prepareStatement("delete from crawl.pages where runid=?");
             deleteFromPages.setInt(1, id);
             deleteFromPages.execute();
+            
+            @Cleanup
+            PreparedStatement deleteFromMRJobs = conn.prepareStatement("delete from crawl.map_reduce_jobs where runid=?");
+            deleteFromMRJobs.setInt(1, id);
+            deleteFromMRJobs.execute();
             
             @Cleanup
             PreparedStatement deleteFromRuns = conn.prepareStatement("delete from crawl.runs where id=?");
