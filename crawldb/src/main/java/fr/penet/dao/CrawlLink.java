@@ -69,6 +69,7 @@ public class CrawlLink {
         @Cleanup
         PreparedStatement stmtGet = conn.prepareStatement("SELECT page_from, page_to, text FROM crawl.links WHERE id=?");
         stmtGet.setInt(1, id);
+        @Cleanup
         ResultSet rsFetched = stmtGet.executeQuery();
         if(!rsFetched.next()) {
             return null;
