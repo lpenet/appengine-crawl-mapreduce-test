@@ -7,7 +7,7 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>
-        <servlet-name>Start Title Stats</servlet-name>
+        <servlet-name>Title Stats</servlet-name>
         <url-pattern>/title_stats</url-pattern>
     </servlet-mapping>
 
