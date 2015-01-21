@@ -28,15 +28,10 @@ public class CrawlDbInputTitles extends Input<String> {
     @Override
     public List<? extends InputReader<String>> createReaders() throws IOException {
         List<CrawlDbInputTitlesReader> readers = new ArrayList<>();
-        try {
-            for(int i = 0 ;i < shardSize ; i++) {
-                readers.add(new CrawlDbInputTitlesReader(runId, shardSize, i));
-            }
-            return readers;
-        } catch(SQLException ex) {
-            log.log(Level.SEVERE, "Error creating readers", ex);
-            return null;
+        for(int i = 0 ;i < shardSize ; i++) {
+            readers.add(new CrawlDbInputTitlesReader(runId, shardSize, i));
         }
+        return readers;
     }
     
 }

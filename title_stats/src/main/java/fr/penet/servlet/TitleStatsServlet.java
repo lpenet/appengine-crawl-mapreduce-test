@@ -12,7 +12,7 @@ import fr.penet.map_reduce.CrawlDbInputTitles;
 import fr.penet.map_reduce.CrawlDbOutputTitleWords;
 import fr.penet.map_reduce.TitleWordsMapper;
 import java.io.IOException;
-import java.util.Map;
+import java.util.HashMap;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,7 +45,7 @@ public class TitleStatsServlet extends HttpServlet {
       TitleWordsMapper mapper = new TitleWordsMapper();
       CrawlDbOutputTitleWords output = new CrawlDbOutputTitleWords(runId);
       MapSpecification<String,
-              Map<String,Integer>,
+              HashMap<String,Integer>,
               Void> spec = new MapSpecification.Builder<>(input, mapper, output)
               .setJobName("Title stats").build();
       // default settings should be ok

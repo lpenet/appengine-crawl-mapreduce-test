@@ -12,11 +12,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import lombok.Cleanup;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 
 /**
@@ -24,18 +22,18 @@ import lombok.extern.java.Log;
  * @author lpenet
  */
 @Log
-public class CrawlDbOutputTitleWordsWriter extends OutputWriter<Map<String,Integer>> {
+public class CrawlDbOutputTitleWordsWriter extends OutputWriter<HashMap<String,Integer>> {
 
     int runId;
     
-    Map<String,Integer> sliceValues = null;
+    HashMap<String,Integer> sliceValues = null;
  
     public CrawlDbOutputTitleWordsWriter(int runIdParam) {
         runId = runIdParam;
     }
     
     @Override
-    public void write(Map<String, Integer> input) throws IOException {
+    public void write(HashMap<String, Integer> input) throws IOException {
         for(Entry<String,Integer> curInput : input.entrySet()) {
             Integer sliceVal = sliceValues.get(curInput.getKey());
             if(sliceVal == null) {

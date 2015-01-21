@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import lombok.AllArgsConstructor;
 import lombok.Cleanup;
 import lombok.extern.java.Log;
 
@@ -24,35 +25,37 @@ import lombok.extern.java.Log;
  */
 @Log
 public class CrawlDbInputTitlesReader extends InputReader<String> {
+    int runId;
+    int shardCount;
+    int shardIndex;
+    int minId = -1;
     
-    ResultSet shard;
-    Connection conn;
-    public CrawlDbInputTitlesReader(int runId, int shardCount, int shardIndex) throws SQLException {
-        DbUtils dbUtils = new DbUtils();
-        conn = dbUtils.createConnection();
-        @Cleanup
-        PreparedStatement shardStmt = conn.prepareStatement("SELECT title from crawl.pages p where runid=? and p.id % ? = ?");
-        shardStmt.setInt(1, runId);
-        shardStmt.setInt(2, shardCount);
-        shardStmt.setInt(3, shardIndex);
-        shard = shardStmt.executeQuery();
+    public CrawlDbInputTitlesReader(int runIdParam, int shardCountParam, int shardIndexParam) {
+        runId = runIdParam;
+        shardCount = shardCountParam;
+        shardIndex = shardIndexParam;
     }
     
     @Override
     public String next() throws IOException, NoSuchElementException {
         try {
+            DbUtils dbUtils = new DbUtils();
+            @Cleanup
+            Connection conn = dbUtils.createConnection();
+            @Cleanup
+            PreparedStatement shardStmt = conn.prepareStatement("SELECT id, title from crawl.pages p where runid=? and p.id % ? = ? and p.id > ?");
+            shardStmt.setInt(1, runId);
+            shardStmt.setInt(2, shardCount);
+            shardStmt.setInt(3, shardIndex);
+            shardStmt.setInt(4, minId);
+            @Cleanup
+            ResultSet shard = shardStmt.executeQuery();
             if(shard.next()) {
-                return shard.getString(1);
+                minId = shard.getInt(1);
+                return shard.getString(2);
             }
         } catch (SQLException ex) {
-            log.log(Level.SEVERE, "SQL error when querying shard", ex);
-        }
-        try {
-            if( (conn != null) && !conn.isClosed()) {
-                conn.close();
-            }
-        } catch (SQLException ex) {
-            log.log(Level.SEVERE, "SQL error when closing connection", ex);
+            log.log(Level.SEVERE, "SQL error while reading input for titles MR job", ex);
         }
         throw new NoSuchElementException();
     }
