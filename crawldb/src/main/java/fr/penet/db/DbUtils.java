@@ -35,6 +35,7 @@ import lombok.extern.java.Log;
           // Alternatively, connect to a Google Cloud SQL instance using:
           // jdbc:mysql://ip-address-of-google-cloud-sql-instance:3306/guestbook?user=root
         }
+        url+="?jdbcCompliantTruncation=false";
         return url;
     }
 

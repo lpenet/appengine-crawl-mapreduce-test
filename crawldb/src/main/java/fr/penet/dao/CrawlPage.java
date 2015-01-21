@@ -30,6 +30,7 @@ public class CrawlPage implements Serializable {
     String url;
     Integer status;
     String title;
+    String text;
     
     public static final int STATUS_IN_PROCESS = -1;
     
@@ -37,7 +38,7 @@ public class CrawlPage implements Serializable {
         List<CrawlPage> listRet = new ArrayList<>();
         try {
             @Cleanup
-            PreparedStatement stmtRunPages = conn.prepareStatement("select id, runid, url, status, title from crawl.pages where runid = ?");
+            PreparedStatement stmtRunPages = conn.prepareStatement("select id, runid, url, status, title, text from crawl.pages where runid = ?");
             stmtRunPages.setInt(1, runid);
             @Cleanup
             ResultSet resultPages = stmtRunPages.executeQuery();
@@ -47,6 +48,7 @@ public class CrawlPage implements Serializable {
                 page.setRunid(resultPages.getInt(2));
                 page.setUrl(resultPages.getString(3));
                 page.setStatus(resultPages.getInt(4));
+                page.setText(resultPages.getString(5));
                 if(resultPages.wasNull()) {
                     page.setStatus(null);
                 }
@@ -65,7 +67,7 @@ public class CrawlPage implements Serializable {
         conn.setAutoCommit(false);
         try {
             @Cleanup
-            PreparedStatement stmtFrontierPage = conn.prepareStatement("select id, runid, url, status, title from crawl.pages where runid= ? and status is null having min(id) for update",
+            PreparedStatement stmtFrontierPage = conn.prepareStatement("select id, runid, url, status, title, text from crawl.pages where runid= ? and status is null having min(id) for update",
                     ResultSet.CONCUR_UPDATABLE);
             stmtFrontierPage.setInt(1, runid);
             @Cleanup
@@ -79,6 +81,7 @@ public class CrawlPage implements Serializable {
             ret.setUrl(resultFrontierPage.getString(3));
             ret.setStatus(STATUS_IN_PROCESS);
             ret.setTitle(resultFrontierPage.getString(5));
+            ret.setText(resultFrontierPage.getString(6));
             PreparedStatement stmtUpdateFrontierPage = conn.prepareStatement("update crawl.pages set status = " + STATUS_IN_PROCESS + " where id = " + ret.getId());
             stmtUpdateFrontierPage.execute();
             return ret;
@@ -122,6 +125,7 @@ public class CrawlPage implements Serializable {
         prepareInsertURL.setInt(1, runid);
         prepareInsertURL.setString(2, url);
         prepareInsertURL.setString(3, title);
+        prepareInsertURL.setString(4, text);
         int ret = prepareInsertURL.executeUpdate();
         if(ret != 1) {
                 throw new Exception("Could not insert run in db");
@@ -140,7 +144,8 @@ public class CrawlPage implements Serializable {
         prepareUpdateURL.setString(2, url);
         prepareUpdateURL.setInt(3, status);
         prepareUpdateURL.setString(4, title);
-        prepareUpdateURL.setInt(5, id);
+        prepareUpdateURL.setString(5, text);
+        prepareUpdateURL.setInt(6, id);
         int ret = prepareUpdateURL.executeUpdate();
         if(ret != 1) {
                 throw new Exception("Could not update run in db");
@@ -148,13 +153,13 @@ public class CrawlPage implements Serializable {
     }
     
     private PreparedStatement prepareInsertURL(Connection conn) throws SQLException {
-        String statement = "INSERT INTO crawl.pages (runid, url,title) VALUES( ?, ?, ? )";
+        String statement = "INSERT INTO crawl.pages (runid, url,title, text) VALUES( ?, ?, ?, ? )";
         PreparedStatement stmt = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
         return stmt;
     }
 
     private PreparedStatement prepareUpdateURL(Connection conn) throws SQLException {
-        String statement = "update crawl.pages set runid = ?, url = ?, status = ?, title = ? where id = ?";
+        String statement = "update crawl.pages set runid = ?, url = ?, status = ?, title = ?, text = ? where id = ?";
         PreparedStatement stmt = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS);
         return stmt;
     }

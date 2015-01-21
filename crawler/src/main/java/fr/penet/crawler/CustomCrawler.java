@@ -154,6 +154,7 @@ public class CustomCrawler implements Serializable {
                         }
                         doc = jsoupConn.get();
                         toVisit.setTitle(doc.title());
+                        toVisit.setText(doc.text());
                         Elements links = doc.select("a[href]");
                         for (Element link : links) {
                             String absHref = link.attr("abs:href");
