@@ -5,6 +5,7 @@
  */
 package fr.penet.dao;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,7 +23,7 @@ import lombok.extern.java.Log;
 @Builder
 @Data
 @Log
-public class CrawlLink {
+public class CrawlLink implements Serializable {
     int id;
     int pageFrom;
     int pageTo;

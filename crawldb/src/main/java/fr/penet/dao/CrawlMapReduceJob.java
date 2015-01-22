@@ -5,6 +5,7 @@
  */
 package fr.penet.dao;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,7 +25,7 @@ import lombok.extern.java.Log;
 @Builder
 @Data
 @Log
-public class CrawlMapReduceJob {
+public class CrawlMapReduceJob implements Serializable {
     int id;
     int runId;
     String appengineMRId;

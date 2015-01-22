@@ -7,11 +7,10 @@ package fr.penet.map_reduce;
 
 import com.google.appengine.tools.mapreduce.Input;
 import com.google.appengine.tools.mapreduce.InputReader;
+import fr.penet.dao.CrawlPage;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
 
@@ -21,15 +20,15 @@ import lombok.extern.java.Log;
  */
 @AllArgsConstructor
 @Log
-public class CrawlDbInputTitles extends Input<String> {
+public class CrawlDbInput extends Input<CrawlPage> {
     int runId;
     int shardSize;
     
     @Override
-    public List<? extends InputReader<String>> createReaders() throws IOException {
-        List<CrawlDbInputTitlesReader> readers = new ArrayList<>();
+    public List<? extends InputReader<CrawlPage>> createReaders() throws IOException {
+        List<CrawlDbInputReader> readers = new ArrayList<>();
         for(int i = 0 ;i < shardSize ; i++) {
-            readers.add(new CrawlDbInputTitlesReader(runId, shardSize, i));
+            readers.add(new CrawlDbInputReader(runId));
         }
         return readers;
     }

@@ -14,15 +14,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.inject.Inject;
 import javax.inject.Named;
 import lombok.Getter;
@@ -81,7 +77,7 @@ public class RunsBean implements Serializable {
 
 
     private final static String CRAWLER_MODULE = "crawler";
-    private final static String TITLE_STATS_MODULE = "title_stats";
+    private final static String TITLE_STATS_MODULE = "mr_stats";
     
     private String getCrawlerModuleBaseUrl() {
         ModulesService modulesApi = ModulesServiceFactory.getModulesService();
@@ -136,7 +132,7 @@ public class RunsBean implements Serializable {
 
     public void startTitleStats(CrawlRun run) throws IOException, SQLException {
         message = "";
-        URL startMRJob = new URL(getTitleStatsModuleBaseUrl() + "/title_stats?runId="+run.getId()+"&shards=5");
+        URL startMRJob = new URL(getTitleStatsModuleBaseUrl() + "/mr_stats?runId="+run.getId()+"&shards=5");
         BufferedReader reader = new BufferedReader(new InputStreamReader(startMRJob.openStream()));
         String line;
         final String PREFIX = "Mapper started. Job id : ";

@@ -8,7 +8,7 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>Title Stats</servlet-name>
-        <url-pattern>/title_stats</url-pattern>
+        <url-pattern>/mr_stats</url-pattern>
     </servlet-mapping>
 
   <!-- These first two servlets are always required -->

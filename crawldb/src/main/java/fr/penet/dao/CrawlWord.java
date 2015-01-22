@@ -5,6 +5,7 @@
  */
 package fr.penet.dao;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,7 +23,7 @@ import lombok.extern.java.Log;
 @Builder
 @Data
 @Log
-public class CrawlWord {
+public class CrawlWord implements Serializable {
     int id;
     int runId;
     String word;
@@ -45,6 +46,24 @@ public class CrawlWord {
         return id;
     }
     
+    public int insertOrIncrement(Connection conn) throws SQLException {
+        @Cleanup
+        PreparedStatement insertLink = conn.prepareStatement(
+                "INSERT INTO crawl.words (runid,word,occurrences) VALUES (?,?,?) "
+                        + "ON DUPLICATE KEY UPDATE occurrences=occurrences+?", Statement.RETURN_GENERATED_KEYS);
+        insertLink.setInt(1, runId);
+        insertLink.setString(2, word);
+        insertLink.setInt(3, occurrences);
+        insertLink.setInt(4, occurrences);
+        insertLink.executeUpdate();
+        
+        @Cleanup
+        ResultSet generatedKeys = insertLink.getGeneratedKeys();
+        generatedKeys.next();
+        id = generatedKeys.getInt(1);
+        return id;
+    }
+
     public void update(Connection conn) throws SQLException {
         @Cleanup
         PreparedStatement updateLink = conn.prepareStatement(

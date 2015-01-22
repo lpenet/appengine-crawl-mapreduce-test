@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
     <application>lpcrawlermapreduce</application>
-    <module>title_stats</module>
+    <module>mr_stats</module>
     <version>${appengine.app.version}</version>
     <instance-class>F1</instance-class>
     <threadsafe>true</threadsafe>

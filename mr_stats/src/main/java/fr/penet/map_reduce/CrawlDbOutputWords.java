@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 
 /**
@@ -19,20 +20,20 @@ import lombok.AllArgsConstructor;
  * @author lpenet
  */
 @AllArgsConstructor
-public class CrawlDbOutputTitleWords extends Output<HashMap<String,Integer>,Void> {
+public class CrawlDbOutputWords extends Output<Map<String,List<Integer>>,Void> {
     int runId;
     
     @Override
-    public List<? extends OutputWriter<HashMap<String, Integer>>> createWriters(int count) {
-        List<CrawlDbOutputTitleWordsWriter> ret = new ArrayList<>();
+    public List<? extends OutputWriter<Map<String,List<Integer>>>> createWriters(int count) {
+        List<CrawlDbOutputWordsWriter> ret = new ArrayList<>();
         for(int i = 0 ; i < count ; i++) {
-            ret.add(new CrawlDbOutputTitleWordsWriter(runId));
+            ret.add(new CrawlDbOutputWordsWriter(runId));
         }
         return ret;
     }
 
     @Override
-    public Void finish(Collection<? extends OutputWriter<HashMap<String, Integer>>> clctn) throws IOException {
+    public Void finish(Collection<? extends OutputWriter<Map<String,List<Integer>>>> clctn) throws IOException {
         return null;
     }
     

@@ -34,6 +34,20 @@ public class CrawlPage implements Serializable {
     
     public static final int STATUS_IN_PROCESS = -1;
     
+    public CrawlPage() { }
+
+    public CrawlPage(ResultSet rs) throws SQLException {
+        setId(rs.getInt(1));
+        setRunid(rs.getInt(2));
+        setUrl(rs.getString(3));
+        setStatus(rs.getInt(4));
+        if(rs.wasNull()) {
+            setStatus(null);
+        }
+        setTitle(rs.getString(5));
+        setText(rs.getString(6));
+    }
+    
     public static List<CrawlPage> getRunPages(int runid, Connection conn) {
         List<CrawlPage> listRet = new ArrayList<>();
         try {
@@ -43,17 +57,7 @@ public class CrawlPage implements Serializable {
             @Cleanup
             ResultSet resultPages = stmtRunPages.executeQuery();
             while(resultPages.next()) {
-                CrawlPage page = new CrawlPage();
-                page.setId(resultPages.getInt(1));
-                page.setRunid(resultPages.getInt(2));
-                page.setUrl(resultPages.getString(3));
-                page.setStatus(resultPages.getInt(4));
-                page.setText(resultPages.getString(5));
-                if(resultPages.wasNull()) {
-                    page.setStatus(null);
-                }
-                page.setTitle(resultPages.getString(5));
-                
+                CrawlPage page = new CrawlPage(resultPages);
                 listRet.add(page);
             }
             
@@ -61,6 +65,15 @@ public class CrawlPage implements Serializable {
             log.log(Level.SEVERE,ex.getLocalizedMessage(),ex);
         }
         return listRet;
+    }
+    
+    public static PreparedStatement getShardPagesStmt(int runId, int shardCount, int shardIndex, Connection conn) throws SQLException {
+        List<CrawlPage> listRet = new ArrayList<>();
+        PreparedStatement shardStmt = conn.prepareStatement("SELECT id, runid, url, status, title, text from crawl.pages p where runid=? and p.id % ? = ?");
+        shardStmt.setInt(1, runId);
+        shardStmt.setInt(2, shardCount);
+        shardStmt.setInt(3, shardIndex);
+        return shardStmt;
     }
     
     public static CrawlPage getFrontierPageForProcessing(int runid, Connection conn) throws SQLException {
@@ -75,13 +88,8 @@ public class CrawlPage implements Serializable {
             if(!resultFrontierPage.next()) {
                 return null;
             }
-            CrawlPage ret = new CrawlPage();
-            ret.setId(resultFrontierPage.getInt(1));
-            ret.setRunid(resultFrontierPage.getInt(2));
-            ret.setUrl(resultFrontierPage.getString(3));
-            ret.setStatus(STATUS_IN_PROCESS);
-            ret.setTitle(resultFrontierPage.getString(5));
-            ret.setText(resultFrontierPage.getString(6));
+            CrawlPage ret = new CrawlPage(resultFrontierPage);
+            @Cleanup
             PreparedStatement stmtUpdateFrontierPage = conn.prepareStatement("update crawl.pages set status = " + STATUS_IN_PROCESS + " where id = " + ret.getId());
             stmtUpdateFrontierPage.execute();
             return ret;

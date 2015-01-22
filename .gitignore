@@ -13,4 +13,4 @@ hs_err_pid*
 /guicrawler/target/
 /crawldb/target/
 /crawler/target/
-/title_stats/target/
+/mr_stats/target/

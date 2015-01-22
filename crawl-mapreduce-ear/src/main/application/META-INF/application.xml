@@ -15,8 +15,8 @@
   </module>
   <module>
     <web>
-      <web-uri>title_stats-1.0-SNAPSHOT.war</web-uri>
-      <context-root>/title_stats</context-root>
+      <web-uri>mr_stats-1.0-SNAPSHOT.war</web-uri>
+      <context-root>/mr_stats</context-root>
     </web>
   </module>
   <library-directory>lib</library-directory>

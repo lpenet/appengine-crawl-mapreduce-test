@@ -5,6 +5,7 @@
  */
 package fr.penet.dao;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,9 +23,9 @@ import lombok.extern.java.Log;
 @Builder
 @Data
 @Log
-public class CrawlWordPages {
+public class CrawlWordPage implements Serializable {
     int id;
-    int word;
+    String word;
     int page;
     
     public int insert(Connection conn) throws SQLException {
@@ -32,7 +33,7 @@ public class CrawlWordPages {
         PreparedStatement insertLink = conn.prepareStatement(
                 "INSERT INTO crawl.word_pages (word,page) "
                 + "VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS);
-        insertLink.setInt(1, word);
+        insertLink.setString(1, word);
         insertLink.setInt(2, page);
         insertLink.executeUpdate();
         
@@ -48,7 +49,7 @@ public class CrawlWordPages {
         PreparedStatement updateLink = conn.prepareStatement(
                 "UPDATE crawl.word_pages set word=?, page = ? "
                 + " WHERE id = ?");
-        updateLink.setInt(1, word);
+        updateLink.setString(1, word);
         updateLink.setInt(2, page);
         updateLink.setInt(3, id);
         updateLink.executeUpdate();
@@ -62,7 +63,7 @@ public class CrawlWordPages {
         deleteLink.execute();
     }
     
-    public static CrawlWordPages getById(Connection conn, int id) throws SQLException {
+    public static CrawlWordPage getById(Connection conn, int id) throws SQLException {
         @Cleanup
         PreparedStatement stmtGet = conn.prepareStatement("SELECT word,page FROM crawl.page_words WHERE id=?");
         stmtGet.setInt(1, id);
@@ -70,9 +71,9 @@ public class CrawlWordPages {
         if(!rsFetched.next()) {
             return null;
         }
-        return CrawlWordPages.builder()
+        return CrawlWordPage.builder()
                 .id(id)
-                .word(rsFetched.getInt(1))
+                .word(rsFetched.getString(1))
                 .page(rsFetched.getInt(2))
                 .build();
     }
