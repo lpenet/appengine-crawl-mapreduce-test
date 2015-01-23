@@ -7,7 +7,6 @@ package fr.penet.map_reduce;
 
 import com.google.appengine.tools.mapreduce.MapOnlyMapper;
 import fr.penet.dao.CrawlPage;
-import java.sql.Array;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;

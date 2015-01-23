@@ -130,10 +130,9 @@ public class RunsBean implements Serializable {
         run.delete(conn);
     }
 
-    public void startTitleStats(CrawlRun run) throws IOException, SQLException {
+    protected void startTitleStatsCommon(URL urlJob, int runId) throws IOException, SQLException {
         message = "";
-        URL startMRJob = new URL(getTitleStatsModuleBaseUrl() + "/mr_stats?runId="+run.getId()+"&shards=5");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(startMRJob.openStream()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(urlJob.openStream()));
         String line;
         final String PREFIX = "Mapper started. Job id : ";
         String jobId = null;
@@ -149,10 +148,20 @@ public class RunsBean implements Serializable {
             return;
         }
         CrawlMapReduceJob job = CrawlMapReduceJob.builder()
-                .runId(run.getId())
+                .runId(runId)
                 .appengineMRId(jobId).build();
         job.insert(conn);
         message = "Job " + jobId + " started";
+    }
+
+    public void startTitleStats(CrawlRun run) throws IOException, SQLException {
+        URL startMRJob = new URL(getTitleStatsModuleBaseUrl() + "/mr_stats?runId="+run.getId()+"&shards=5");
+        startTitleStatsCommon(startMRJob,run.getId());
+    }
+
+    public void startTitleStatsSQL(CrawlRun run) throws IOException, SQLException {
+        URL startMRJob = new URL(getTitleStatsModuleBaseUrl() + "/mr_stats?runId="+run.getId()+"&shards=5&type=sql-output");
+        startTitleStatsCommon(startMRJob,run.getId());
     }
 
     public List<CrawlMapReduceJob> getRunMRJobs(CrawlRun run) throws SQLException {

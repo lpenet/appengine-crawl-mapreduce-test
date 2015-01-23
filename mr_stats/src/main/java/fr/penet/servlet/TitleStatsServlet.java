@@ -8,9 +8,11 @@ package fr.penet.servlet;
 import com.google.appengine.tools.mapreduce.MapJob;
 import com.google.appengine.tools.mapreduce.MapSettings;
 import com.google.appengine.tools.mapreduce.MapSpecification;
+import com.google.appengine.tools.mapreduce.Output;
 import fr.penet.dao.CrawlPage;
 import fr.penet.map_reduce.CrawlDbInput;
 import fr.penet.map_reduce.CrawlDbOutputWords;
+import fr.penet.map_reduce.CrawlDbOutputWordsDatastore;
 import fr.penet.map_reduce.TitleWordsMapper;
 import java.io.IOException;
 import java.util.List;
@@ -43,13 +45,23 @@ public class TitleStatsServlet extends HttpServlet {
       }
       int runId = Integer.parseInt(runIdString);
 
+      
+      String runType = req.getParameter("type");
       CrawlDbInput input = new CrawlDbInput(runId, shards);
       TitleWordsMapper mapper = new TitleWordsMapper();
-      CrawlDbOutputWords output = new CrawlDbOutputWords(runId);
+      Output<Map<String,List<Integer>>,Void> output;
+      String jobName = "MR stats for " + runId;
+      if(StringUtils.equals(runType, "sql-output")) {
+          output = new CrawlDbOutputWords(runId);
+          jobName += " (SQL)";
+      } else {
+          output = new CrawlDbOutputWordsDatastore(runId);
+          jobName += " (datastore)";
+      }
       MapSpecification<CrawlPage,
               Map<String,List<Integer>>,
               Void> spec = new MapSpecification.Builder<>(input, mapper, output)
-              .setJobName("MR stats").build();
+              .setJobName(jobName).build();
       // default settings should be ok
       MapSettings settings = new MapSettings.Builder().build();
       String jobId = MapJob.start(spec, settings);

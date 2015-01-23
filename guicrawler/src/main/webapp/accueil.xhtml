@@ -74,7 +74,10 @@
                         </ui:repeat>
                     </p:column>
                     <p:column>
-                        <p:commandLink action="#{runsBean.startTitleStats(run)}" value="Start a title stats M/R job" update="@form"/>
+                        <p:commandLink action="#{runsBean.startTitleStats(run)}" value="Start a title stats M/R job saving in datastore" update="@form"/>
+                    </p:column>
+                    <p:column>
+                        <p:commandLink action="#{runsBean.startTitleStatsSQL(run)}" value="Start a title stats M/R job  saving in SQL DB" update="@form"/>
                     </p:column>
                 </p:dataTable>
             </p:panelGrid>

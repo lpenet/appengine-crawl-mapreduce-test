@@ -92,7 +92,7 @@ public class ShardedCounter {
     /**
      * Default number of shards.
      */
-    private static final int INITIAL_SHARDS = 5;
+    private static final int INITIAL_SHARDS = 100;
 
     /**
      * Cache duration for memcache.
