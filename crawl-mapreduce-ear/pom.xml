@@ -47,6 +47,7 @@
 						<jvmFlag>-Dcom.google.appengine.devappserver_module.admin.port=8080</jvmFlag>
 						<!-- example of usual JVM flag -->
 						<jvmFlag>-XX:MaxPermSize=512m</jvmFlag>
+                                                <jvmFlag>-Xmx1024m</jvmFlag>
 						<!-- Starting dev server on port 8000 without suspending
 						  (see https://cloud.google.com/appengine/docs/java/tools/maven#app_engine_maven_plugin_goals) -->
 						<jvmFlag>-Xdebug</jvmFlag>
