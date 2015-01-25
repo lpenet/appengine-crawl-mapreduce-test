@@ -15,6 +15,7 @@
     <module>guicrawler</module>
     <module>crawler</module>
     <module>crawldb</module>
+    <module>crawlnosqldb</module>
     <module>crawl-mapreduce-ear</module>
     <module>mr_stats</module>
   </modules>

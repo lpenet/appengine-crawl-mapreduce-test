@@ -9,6 +9,7 @@ import com.google.appengine.api.modules.ModulesService;
 import com.google.appengine.api.modules.ModulesServiceFactory;
 import fr.penet.dao.CrawlMapReduceJob;
 import fr.penet.dao.CrawlRun;
+import fr.penet.dao.NSCrawlWord;
 import fr.penet.viewconfig.Pages;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -50,6 +51,11 @@ public class RunsBean implements Serializable {
     @Getter
     @Setter
     private List<CrawlRun> filteredRuns;
+    
+    @Getter @Setter
+    CrawlRun selectedRun;
+
+    @Getter @Setter List<NSCrawlWord> filteredWords;
 
     public Class<? extends ViewConfig> goAccueil() {
         return Pages.Accueil.class;
@@ -167,4 +173,12 @@ public class RunsBean implements Serializable {
     public List<CrawlMapReduceJob> getRunMRJobs(CrawlRun run) throws SQLException {
         return CrawlMapReduceJob.getByRunId(conn, run.getId());
     }
+    
+    public List<NSCrawlWord> getRunWords(CrawlRun run) {
+        if(run == null) {
+            return null;
+        }
+        return NSCrawlWord.getRunWordsByCount(run.getId());
+    }
+    
 }

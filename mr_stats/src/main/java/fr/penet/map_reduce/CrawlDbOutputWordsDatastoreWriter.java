@@ -14,6 +14,8 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Text;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.tools.mapreduce.OutputWriter;
+import fr.penet.dao.NSCrawlWord;
+import fr.penet.dao.NSCrawlWordPage;
 import fr.penet.utils.ShardedCounter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,18 +62,9 @@ public class CrawlDbOutputWordsDatastoreWriter extends OutputWriter<Map<String,L
     }
 
 
-    private String getKeyFromWord(String word) {
-        String ret = "(" + word + ")";
-        return ret.substring(0, Math.min(ret.length(), 500)-1);
-    }
-    
     @Override
     public void endSlice() throws IOException {
         // in datastore writer, we save both word count and word pages, and performance is great.
-        final String WORD_TYPE = "Word";
-        final String WORD_PAGE_TYPE = "WordPage";
-        final String WORD_PROPERTY = "word";
-        final String PAGE_ID_PROPERTY = "pageid";
         final int BATCH_SIZE=100;
         
         DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
@@ -82,31 +75,25 @@ public class CrawlDbOutputWordsDatastoreWriter extends OutputWriter<Map<String,L
 //            curEntIdx++;
 //            log.log(Level.INFO, "Shard " + getContext().getShardNumber() + " : processing entry " + curEntIdx + " out of " + sliceValues.size() + " : " + entry.getKey());
             // let's add the word to datastore, if it does not exist
-            String wordKey = getKeyFromWord(entry.getKey());
-            Key keyWord = KeyFactory.createKey(WORD_TYPE, wordKey);
+            String word = entry.getKey();
+            NSCrawlWord wordEntity = new NSCrawlWord(runId,word);
             try {
-                Entity word= datastore.get(keyWord);
-            } catch (EntityNotFoundException ex) {
-                try {
-                    Entity word = new Entity(WORD_TYPE,wordKey);
-                    datastore.put(word);
-                } catch(ConcurrentModificationException e) {
-                    // ok, the entity has been created...
-                }
+                wordEntity.insertUpdate();
+            } catch(ConcurrentModificationException e) {
+                // ok, the entity has been created...
             }
 
             List<Integer> pageIds = entry.getValue();
             if(!pageIds.isEmpty()) {
                 // let's increment its sharded counter
-                ShardedCounter sc = new ShardedCounter(wordKey);
+                ShardedCounter sc = wordEntity.getCounter();
                 sc.increment(pageIds.size());
 
                 for(int pageId : pageIds) {
-                    Entity wordPage = new Entity(WORD_PAGE_TYPE);
-                    wordPage.setProperty(WORD_PROPERTY, new Text(entry.getKey()));
-                    wordPage.setProperty(PAGE_ID_PROPERTY, pageId);
+                    NSCrawlWordPage nscwp = new NSCrawlWordPage(runId,word);
+                    nscwp.setPageId(pageId);
                     // we should not raise an exception there, as we are the only processor of the page
-                    listWordPages.add(wordPage);
+                    listWordPages.add(nscwp.prepareForInsertUpdateNoPut());
                 }
                 if(listWordPages.size() >= BATCH_SIZE) {
                     datastore.put(listWordPages);

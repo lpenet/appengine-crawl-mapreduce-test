@@ -26,7 +26,10 @@
                                      process="seed @this"
                                      update="@form"/>
                 </p:panelGrid>
-                <p:dataTable value="#{runsBean.runs}" var="run" filteredValue="#{runsBean.filteredRuns}" rowKey="#{run.id}}">
+                <p:dataTable value="#{runsBean.runs}" var="run" filteredValue="#{runsBean.filteredRuns}" rowKey="#{run.id}}"
+                             selection="#{runsBean.selectedRun}" selectionMode="single">
+                    <p:ajax event="rowSelect" update="@parent:wordTable"/>
+                    <p:ajax event="rowUnselect" update="@parent:wordTable"/>
                     <p:column headerText="Identifier" filterBy="#{run.id}" filterMatchMode="contains" sortBy="#{run.id}">
                         <h:outputText value="#{run.id}"/>
                     </p:column>
@@ -78,6 +81,16 @@
                     </p:column>
                     <p:column>
                         <p:commandLink action="#{runsBean.startTitleStatsSQL(run)}" value="Start a title stats M/R job  saving in SQL DB" update="@form"/>
+                    </p:column>
+                </p:dataTable>
+
+                <p:dataTable value="#{runsBean.getRunWords(runsBean.selectedRun)}" var="word" id="wordTable" filteredValue="#{runsBean.filteredWords}"
+                             paginator="true" rows="20">
+                    <p:column headerText="Word" filterBy="#{word.word}">
+                        <h:outputText value="#{word.word}"/>
+                    </p:column>
+                    <p:column headerText="Count">
+                        <h:outputText value="#{word.count}"/>
                     </p:column>
                 </p:dataTable>
             </p:panelGrid>
