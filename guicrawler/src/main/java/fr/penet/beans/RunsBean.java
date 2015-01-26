@@ -20,6 +20,7 @@ import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Named;
 import lombok.Getter;
@@ -35,6 +36,9 @@ import org.apache.deltaspike.core.api.scope.ViewAccessScoped;
 @Named
 @ViewAccessScoped
 public class RunsBean implements Serializable {
+    private final static String CRAWLER_MODULE = "crawler";
+    private final static String TITLE_STATS_MODULE = "mr_stats";
+    
     @Inject Connection conn;
     
     @Getter
@@ -44,15 +48,14 @@ public class RunsBean implements Serializable {
     @Getter
     String message;
     
-    public List<CrawlRun> getRuns() {
-        return CrawlRun.getAllRuns(conn);
-    }
+    @Getter
+    LazyNSCrawlWordModel modelWords = new LazyNSCrawlWordModel();
     
     @Getter
     @Setter
     private List<CrawlRun> filteredRuns;
     
-    @Getter @Setter
+    @Getter
     CrawlRun selectedRun;
 
     @Getter @Setter List<NSCrawlWord> filteredWords;
@@ -65,6 +68,10 @@ public class RunsBean implements Serializable {
         return Pages.RunPages.class;
     }
 
+    public List<CrawlRun> getRuns() {
+        return CrawlRun.getAllRuns(conn);
+    }
+    
     public int getPageCount(CrawlRun c) throws SQLException {
         return c.getPageCount(conn);
     }
@@ -82,9 +89,6 @@ public class RunsBean implements Serializable {
     }
 
 
-    private final static String CRAWLER_MODULE = "crawler";
-    private final static String TITLE_STATS_MODULE = "mr_stats";
-    
     private String getCrawlerModuleBaseUrl() {
         ModulesService modulesApi = ModulesServiceFactory.getModulesService();
         return "http://" + modulesApi.getVersionHostname(CRAWLER_MODULE,null);
@@ -173,12 +177,22 @@ public class RunsBean implements Serializable {
     public List<CrawlMapReduceJob> getRunMRJobs(CrawlRun run) throws SQLException {
         return CrawlMapReduceJob.getByRunId(conn, run.getId());
     }
-    
-    public List<NSCrawlWord> getRunWords(CrawlRun run) {
-        if(run == null) {
-            return null;
-        }
-        return NSCrawlWord.getRunWordsByCount(run.getId());
+
+    public void setSelectedRun(CrawlRun selected) {
+        selectedRun = selected;
+        adjustModel();
     }
     
+    private void adjustModel() {
+        if(selectedRun != null) {
+            modelWords.setRunId(selectedRun.getId());
+        } else {
+            modelWords.setRunId(-1);
+        }
+    }
+    
+    @PostConstruct
+    public void postInit() {
+        adjustModel();
+    }
 }

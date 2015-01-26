@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<datastore-indexes
+  autoGenerate="true">
+    <datastore-index kind="Word" ancestor="false">
+        <property name="count" direction="asc" />
+        <property name="count" direction="desc" />
+        <property name="runId" direction="asc" />
+        <property name="runId" direction="desc" />
+    </datastore-index>
+</datastore-indexes>

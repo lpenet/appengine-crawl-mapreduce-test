@@ -84,9 +84,9 @@
                     </p:column>
                 </p:dataTable>
 
-                <p:dataTable value="#{runsBean.getRunWords(runsBean.selectedRun)}" var="word" id="wordTable" filteredValue="#{runsBean.filteredWords}"
-                             paginator="true" rows="20">
-                    <p:column headerText="Word" filterBy="#{word.word}">
+                <p:dataTable value="#{runsBean.modelWords}" var="word" id="wordTable"
+                             paginator="true" rows="20" lazy="true">
+                    <p:column headerText="Word">
                         <h:outputText value="#{word.word}"/>
                     </p:column>
                     <p:column headerText="Count">

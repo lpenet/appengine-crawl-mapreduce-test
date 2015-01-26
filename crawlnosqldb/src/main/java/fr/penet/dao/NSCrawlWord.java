@@ -14,6 +14,9 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Query.Filter;
+import com.google.appengine.api.datastore.Query.FilterOperator;
+import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.datastore.Text;
 import fr.penet.utils.ShardedCounter;
@@ -32,8 +35,9 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class NSCrawlWord implements Serializable {
     
-    public final static String NOSQL_CRAWL_WORD_ENTITY_BASE = "Word_";
+    public final static String NOSQL_CRAWL_WORD_ENTITY_BASE = "Word";
     public final static String NOSQL_CRAWL_WORD_COUNT_PROPERTY = "count";
+    public final static String NOSQL_CRAWL_RUNID_PROPERTY = "runId";
     // yes, we store word as key and as property
     // key is wrapped in ( ) and truncated
     // and, well, this is just a fun test project. :-)
@@ -66,7 +70,7 @@ public class NSCrawlWord implements Serializable {
     }
     
     private static String getType(int runIdParam) {
-        return NOSQL_CRAWL_WORD_ENTITY_BASE + runIdParam;
+        return NOSQL_CRAWL_WORD_ENTITY_BASE;
     }        
     
     public void setWord(String wordParam) {
@@ -88,6 +92,7 @@ public class NSCrawlWord implements Serializable {
             wordEntity = new Entity(type,keyableWord);
         }
         wordEntity.setProperty(NOSQL_CRAWL_WORD_COUNT_PROPERTY, count);
+        wordEntity.setProperty(NOSQL_CRAWL_RUNID_PROPERTY, runId);
         wordEntity.setProperty(NOSQL_CRAWL_WORD_FULL_WORD_PROPERTY, new Text(word));
         return wordEntity;
     }
@@ -97,28 +102,52 @@ public class NSCrawlWord implements Serializable {
         return datastore.put(prepareForInsertUpdateNoPut());
     }
 
+    private static Filter getRunIdFilter(int runId) {
+        return new FilterPredicate(NOSQL_CRAWL_RUNID_PROPERTY,
+                FilterOperator.EQUAL,
+                runId);
+    }
     public static NSCrawlWord getWord(int runId, String word) throws EntityNotFoundException {
-        DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
         Key key = KeyFactory.createKey(getType(runId), getKeyFromWord(word));
-        Entity wordEntity;
-        wordEntity= datastore.get(key);
+                
+        Query q = new Query(getType(runId)).setFilter(getRunIdFilter(runId));
+        DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+        Entity wordEntity = datastore.prepare(q).asSingleEntity();
         
         NSCrawlWord cword = new NSCrawlWord(runId);
-        cword.setWord(((Text)wordEntity.getProperty(NOSQL_CRAWL_WORD_FULL_WORD_PROPERTY)).toString());
+        cword.setWord(((Text)wordEntity.getProperty(NOSQL_CRAWL_WORD_FULL_WORD_PROPERTY)).getValue());
         cword.setCount((int) wordEntity.getProperty(NOSQL_CRAWL_WORD_COUNT_PROPERTY));
         cword.key = key;
         return cword;
     }
     
     public static List<NSCrawlWord> getRunWordsByCount(int runId) {
+        return getRunWordsByCount(runId,0,0);
+    }
+
+    public static int getRunWordsByCountCount(int runId) {
         DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-        Query q = new Query(getType(runId)).addSort(NOSQL_CRAWL_WORD_COUNT_PROPERTY, SortDirection.DESCENDING);
+        Query q = new Query(getType(runId)).setFilter(getRunIdFilter(runId)).addSort(NOSQL_CRAWL_WORD_COUNT_PROPERTY, SortDirection.DESCENDING);
+        PreparedQuery pq = datastore.prepare(q);
+        FetchOptions fo = FetchOptions.Builder.withDefaults();
+        return pq.countEntities(fo);
+    }
+
+    public static List<NSCrawlWord> getRunWordsByCount(int runId, int first, int pageSize) {
+        DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+        Query q = new Query(getType(runId)).setFilter(getRunIdFilter(runId)).addSort(NOSQL_CRAWL_WORD_COUNT_PROPERTY, SortDirection.DESCENDING);
         PreparedQuery pq = datastore.prepare(q);
         List<NSCrawlWord> ret = new ArrayList<>();
-        FetchOptions fo = FetchOptions.Builder.withChunkSize(100);
+        FetchOptions fo = FetchOptions.Builder.withChunkSize(Math.min(100,pageSize));
+        if(first > 0) {
+            fo = fo.offset(first);
+        }
+        if(pageSize > 0) {
+            fo = fo.limit(pageSize);
+        }
         for (Entity result : pq.asIterable(fo)) {
             NSCrawlWord newElem = new NSCrawlWord(runId);
-            newElem.setWord((String) result.getProperty(NOSQL_CRAWL_WORD_FULL_WORD_PROPERTY));
+            newElem.setWord(((Text) result.getProperty(NOSQL_CRAWL_WORD_FULL_WORD_PROPERTY)).getValue());
             newElem.setCount(((Long)result.getProperty(NOSQL_CRAWL_WORD_COUNT_PROPERTY)).intValue());
             ret.add(newElem);
         }
